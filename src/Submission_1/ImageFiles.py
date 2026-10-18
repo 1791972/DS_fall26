@@ -45,13 +45,13 @@ class ImageFiles:
 
         self.current_files = new_files
 
-    def files_added():
+    def files_added(self):
         """Retorna una llista (de strings) amb els paths relatius dels arxius
            que s'han afegit des de l'última crida a reload_fs()."""
         
         return self.added_files
 
-    def files_removed():
+    def files_removed(self):
         """Retorna una llista (de strings) amb els paths relatius dels arxius
            que s'han eliminat des de l'última crida a reload_fs()."""
 

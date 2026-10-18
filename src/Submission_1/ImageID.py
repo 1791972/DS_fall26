@@ -36,14 +36,14 @@ class ImageID:
         self.uuid_file[new_uuid] = fCano
         return new_uuid
         
-    def get_uuid(file: str) -> str:
+    def get_uuid(self, file: str) -> str:
         """Retorna el UUID associat a l'arxiu, si ja ha estat generat.
             Si no existeix, retorna None."""
 
         fCano = cfg.get_canonical_pathfile(file)
         return self.file_uuid.get(fCano, None)
 
-    def remove_uuid(uuid: str) -> None:
+    def remove_uuid(self, uuid: str) -> None:
         """Elimina el UUID del registre d'identificadors actius.
             Després d'eliminar-lo, aquest UUID es podrà tornar a utilitzar."""
 
