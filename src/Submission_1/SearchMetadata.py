@@ -39,7 +39,7 @@ class SearchMetadata:
             elif type == 'date':
                 c = self.image_data.get_created_date(uuid)
 
-            if str(c).find(strs) != -1:
+            if str(c).find(subs) != -1:
                 res.append(uuid)
 
         return res
