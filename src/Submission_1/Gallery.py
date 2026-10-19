@@ -19,29 +19,50 @@ Format JSON d'una galeria:
     "generated_images/city_neon_12.png",
     "generated_images/urban_street_45.png"
   ]
-}
+}"""
 
-Mètodes a implementar:
-    - load_file(file: str) -> None
-        Llegeix un arxiu JSON amb la definició de la galeria.
+
+import os
+import cfg
+import json
+
+class Gallery:
+    def __init__(self):
+        self.gallery_name = ""
+        self.description = ""
+        self.created_date = ""
+        self.images
+
+    def load_file(self, file: str) -> None:
+        """Llegeix un arxiu JSON amb la definició de la galeria.
         Ha de validar que cada imatge referenciada existeix a la col·lecció.
         Si una imatge no existeix, l'ignora i continua processant.
-        Emmagatzema internament els UUID de les imatges vàlides.
+        Emmagatzema internament els UUID de les imatges vàlides."""
 
-    - show() -> None
-        Visualitza totes les imatges de la galeria en ordre utilitzant
-        ImageViewer.show_image().
 
-    - add_image_at_end(uuid: str) -> None
-        Afegeix una imatge al final de la galeria.
 
-    - remove_first_image() -> None
-        Elimina la primera imatge de la galeria.
+    def show(self) -> None:
+        """Visualitza totes les imatges de la galeria en ordre utilitzant
+        ImageViewer.show_image()."""
 
-    - remove_last_image() -> None
-        Elimina l'última imatge de la galeria.
 
-Notes:
+
+    def add_image_at_end(self, uuid: str) -> None:
+        """Afegeix una imatge al final de la galeria."""
+
+
+
+    def remove_first_image(self) -> None:
+        """Elimina la primera imatge de la galeria."""
+
+
+
+    def remove_last_image(self) -> None:
+        """Elimina l'última imatge de la galeria."""
+
+
+
+"""Notes:
     - Utilitzeu la llibreria json per llegir els arxius
     - Els paths dins el JSON són relatius a ROOT_DIR
     - Cada galeria és un objecte independent (instància de Gallery)
