@@ -15,47 +15,48 @@ import cfg
 
 class ImageFiles:
     def __init__(self):
-        self.current_files = []
-        self.added_files = []
-        self.removed_files = []
+        self.current_files = set()
+        self.previous_files = set()
 
     def reload_fs(self, path: str):
         """Recorre el directori especificat i actualitza la llista d'arxius PNG.
            Detecta els arxius nous i els que s'han eliminat."""
-        
-        direction = path if path != "" else cfg.get_root()
-        new_files = []
 
-        for root, directions, files in os.walk(direction):
+        if path is None:
+            path = cfg.get_root()
+
+        search_path = path if os.path.isabs(path) else os.path.join(cfg.get_root(), path)
+
+        self.previous_files = set(self.current_files)
+        new_files = set()
+
+        if not os.path.exists(search_path):
+            self.current_files = new_files
+            return
+
+        for root, _, files in os.walk(search_path):
             for f in files:
                 if f.lower().endswith('.png'):
                     pathT = os.path.join(root, f)
                     pathC = cfg.get_canonical_pathfile(pathT)
-                    new_files.append(pathC)
-
-        self.added_files = []
-        for f in new_files:
-            if f not in self.current_files:
-                self.added_files.append(f)
-
-        self.removed_files = []
-        for f in new_files:
-            if f not in self.current_files:
-                self.removed_files.append(f)
+                    new_files.add(pathC)
 
         self.current_files = new_files
+        
 
     def files_added(self):
         """Retorna una llista (de strings) amb els paths relatius dels arxius
            que s'han afegit des de l'última crida a reload_fs()."""
         
-        return self.added_files
+        added = self.current_files - self.previous_files
+        return list(added)
 
     def files_removed(self):
         """Retorna una llista (de strings) amb els paths relatius dels arxius
            que s'han eliminat des de l'última crida a reload_fs()."""
 
-        return self.removed_files
+        removed = self.previous_files - self.current_files
+        return list(removed)
 
 
 """
