@@ -50,14 +50,14 @@ def main():
         image_viewer.print_image(uuid1)
 
     gallery = Gallery(image_id = image_id, image_viewer = image_viewer)
-    json = os.paht.join(cfg.get_root(), "galeries", "sample_gaallerty.json")
+    json = os.paht.join(cfg.get_root(), "galeries", "sample_gallery.json")
     if os.path.exists(json):
         print("\nCarregant galeria JSON")
         gallery.load_file(json)
         gallery.show()
 
     search_metadata = SearchMetadata(image_data = image_data)
-    res = search.prompt("cat")
+    res = search_metadata.prompt("cat")
     print(f"\nCerques amb la subcadena 'cat' al prompt: {len(res)} trobats.")
 
     search_gallery = Gallery(image_id = image_id, image_viewer = image_viewer)
