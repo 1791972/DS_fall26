@@ -17,7 +17,8 @@ from PIL import Image
 
 
 def _norm(file):
-    # CANVI: mateixa normalització idempotent que a ImageID
+    # CANVI: mateixa normalització que a ImageID (no re-relativitza els
+    # paths que ja són relatius a ROOT_DIR)
     if not isinstance(file, str):
         return file
     if os.path.isabs(file):
@@ -30,22 +31,23 @@ class ImageData:
         self.data = {}
 
     def __len__(self):
-        # CANVI: nou, per si el test fa len() sobre l'objecte
+        # CANVI: requerit pel test
         return len(self.data)
+
+    def __str__(self):
+        # CANVI: requerit pel test
+        return "ImageData(" + str(len(self.data)) + " imatges)"
 
     def add_image(self, uuid: str, file: str) -> None:
         """Crea una entrada per a la imatge amb l'UUID i el path especificats.
         Inicialment les metadades estan buides (no llegides del disc)."""
 
-        # CANVI: s'ignoren insercions sense sentit i es evita duplicar/reiniciar
+        # CANVI: una inserció sense sentit (uuid o path invàlids) s'ignora
+        # en lloc de provocar una excepció
         if uuid is None or not isinstance(file, str) or file == "":
             return
-        if uuid in self.data:
-            return
 
-        # CANVI: abans cfg.get_canonical_pathfile(file), que trencava els paths
-        # que ja eren relatius
-        fCano = _norm(file)
+        fCano = _norm(file)   # CANVI: abans cfg.get_canonical_pathfile(file)
         self.data[uuid] = {'file': fCano, 'metadata': {}, 'dimensions': (None, None), 'loaded': False}
 
     def remove_image(self, uuid: str) -> None:
@@ -53,6 +55,12 @@ class ImageData:
 
         if uuid in self.data:
             del self.data[uuid]
+
+    def get_filename(self, uuid: str) -> str:
+        # CANVI: nou, requerit pel test. Retorna el path guardat de l'arxiu.
+        if uuid not in self.data:
+            return "None"
+        return self.data[uuid]['file']
 
     def load_metadata(self, uuid: str) -> None:
         """Llegeix les metadades embegudes en l'arxiu PNG i les emmagatzema.'
