@@ -28,6 +28,17 @@ import json
 from ImageID import ImageID
 from ImageViewer import ImageViewer
 
+
+def _norm(file):
+    # CANVI: mateixa normalització que a ImageID (no re-relativitza els
+    # paths que ja són relatius a ROOT_DIR)
+    if not isinstance(file, str):
+        return file
+    if os.path.isabs(file):
+        return cfg.get_canonical_pathfile(file)
+    return file.replace('\\', '/')
+
+
 class Gallery:
     def __init__(self, image_id, image_viewer):
         self.gallery_name = ""
@@ -35,7 +46,16 @@ class Gallery:
         self.created_date = ""
         self.uuids = []
         self.image_id = image_id if image_id is not None else ImageID()
-        self.image_viewer = image_viewer if image_viewer is not None else ImageViewer()
+        # CANVI: ImageViewer exigeix un paràmetre (image_data)
+        self.image_viewer = image_viewer if image_viewer is not None else ImageViewer(None)
+
+    def __len__(self):
+        # CANVI: requerit pel test
+        return len(self.uuids)
+
+    def __str__(self):
+        # CANVI: requerit pel test
+        return "Gallery(" + self.gallery_name + ", " + str(len(self.uuids)) + " imatges)"
 
     def load_file(self, file: str) -> None:
         """Llegeix un arxiu JSON amb la definició de la galeria.
@@ -56,20 +76,38 @@ class Gallery:
         self.created_date = data.get("created_date", "")
         self.uuids = []
 
+        # CANVI: prefix "generated_images/" que pot venir als paths del JSON
+        # (l'exemple de l'enunciat el porta, però els paths són relatius a ROOT_DIR)
+        prefix = os.path.basename(os.path.normpath(cfg.get_root())) + "/"
+
         for p in data.get("images", []):
-            fCano = cfg. get_canonical_pathfile(p)
-            pathF = os.path.join(cfg.get_root(), fCano)
+            # CANVI: abans cfg.get_canonical_pathfile(p), que trencava els paths
+            # relatius. Ara es proven els candidats i es tria el que existeix.
+            fCano = _norm(p)
+            if not isinstance(fCano, str):
+                continue
+            candidats = [fCano]
+            if fCano.startswith(prefix):
+                candidats.append(fCano[len(prefix):])
 
-            if os.path.isfile(pathF):
-                if self.image_id:
-                    new_uuid = self.image_id.get_uuid(fCano)
-                    if new_uuid is None:
-                        new_uuid = self.imge_id.generate_uuid(fCano)
-                else:
-                    new_uuid = str(cfg.get_uuid(fCano))
+            fCano = None
+            for c in candidats:
+                if os.path.isfile(os.path.join(cfg.get_root(), c)):
+                    fCano = c
+                    break
+            if fCano is None:
+                continue   # la imatge no existeix: s'ignora
 
-                if new_uuid:
-                    self.uuids.append(new_uuid)
+            # CANVI: "is not None" (amb __len__ un ImageID buit seria "fals")
+            if self.image_id is not None:
+                new_uuid = self.image_id.get_uuid(fCano)
+                if new_uuid is None:
+                    new_uuid = self.image_id.generate_uuid(fCano)   # CANVI: abans self.imge_id
+            else:
+                new_uuid = str(cfg.get_uuid(fCano))
+
+            if new_uuid:
+                self.uuids.append(new_uuid)
 
     def show(self) -> None:
         """Visualitza totes les imatges de la galeria en ordre utilitzant
@@ -81,7 +119,7 @@ class Gallery:
         print(f"Total imatges:  {len(self.uuids)}")
 
         for uuid in self.uuids:
-            if self.image_viewer:
+            if self.image_viewer is not None:   # CANVI: "is not None"
                 self.image_viewer.show_image(uuid, cfg.DISPLAY_MODE)
             else:
                 print(f"UUID: {uuid}")
@@ -95,7 +133,7 @@ class Gallery:
         """Elimina la primera imatge de la galeria."""
 
         if len(self.uuids) > 0:
-            self.image_uuids.pop(0)
+            self.uuids.pop(0)   # CANVI: abans self.image_uuids.pop(0)
 
     def remove_last_image(self) -> None:
         """Elimina l'última imatge de la galeria."""
