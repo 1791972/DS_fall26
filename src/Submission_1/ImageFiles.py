@@ -18,6 +18,9 @@ class ImageFiles:
         self.current_files = set()
         self.previous_files = set()
 
+    def __str__(self):
+        return "ImageFiles(" + str(len(self.current_files)) + " arxius)"
+
     def reload_fs(self, path: str):
         """Recorre el directori especificat i actualitza la llista d'arxius PNG.
            Detecta els arxius nous i els que s'han eliminat."""
