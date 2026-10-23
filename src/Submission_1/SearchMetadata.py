@@ -16,6 +16,9 @@ class SearchMetadata:
     def __init__(self, image_data):
         self.image_data = image_data if image_data is not None else ImageData()
 
+    def __str__(self):
+        return "SearchMetadata(" + str(len(self.image_data)) + " imatges)"
+
     def _field(self, type: str, sub: str) -> list:
         res = []
         if sub is None:
