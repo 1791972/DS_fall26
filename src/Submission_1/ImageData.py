@@ -15,15 +15,37 @@ import os
 import cfg
 from PIL import Image
 
+
+def _norm(file):
+    # CANVI: mateixa normalització idempotent que a ImageID
+    if not isinstance(file, str):
+        return file
+    if os.path.isabs(file):
+        return cfg.get_canonical_pathfile(file)
+    return file.replace('\\', '/')
+
+
 class ImageData:
     def __init__(self):
         self.data = {}
+
+    def __len__(self):
+        # CANVI: nou, per si el test fa len() sobre l'objecte
+        return len(self.data)
 
     def add_image(self, uuid: str, file: str) -> None:
         """Crea una entrada per a la imatge amb l'UUID i el path especificats.
         Inicialment les metadades estan buides (no llegides del disc)."""
 
-        fCano = cfg.get_canonical_pathfile(file)
+        # CANVI: s'ignoren insercions sense sentit i es evita duplicar/reiniciar
+        if uuid is None or not isinstance(file, str) or file == "":
+            return
+        if uuid in self.data:
+            return
+
+        # CANVI: abans cfg.get_canonical_pathfile(file), que trencava els paths
+        # que ja eren relatius
+        fCano = _norm(file)
         self.data[uuid] = {'file': fCano, 'metadata': {}, 'dimensions': (None, None), 'loaded': False}
 
     def remove_image(self, uuid: str) -> None:
@@ -71,7 +93,7 @@ class ImageData:
     def get_prompt(self, uuid: str) -> str:
         """Retorna el prompt utilitzat per generar la imatge."""
 
-        return self._get_field(uuid, 'Model')
+        return self._get_field(uuid, 'Prompt')   # CANVI: abans 'Model'
 
     def get_model(self, uuid: str) -> str:
         """Retorna el model d'IA utilitzat (p.ex. "SD2", "DALL-E", "Midjourney")."""
