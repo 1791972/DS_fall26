@@ -36,6 +36,18 @@ Notes:
 import os
 import cfg
 
+# --- TEMPORAL (diagnòstic): imprimeix les crides que fa el test. Posa DEBUG = False
+# --- (o esborra les línies "_trace") quan ja no calgui.
+DEBUG = True
+_ntrace = 0
+
+
+def _trace(msg):
+    global _ntrace
+    if DEBUG and _ntrace < 1500:
+        _ntrace += 1
+        print("TRACE " + msg)
+
 
 class ImageID:
     def __init__(self):
@@ -69,6 +81,7 @@ class ImageID:
         mostra un missatge d'error."""
 
         if not isinstance(file, str):
+            _trace("ImageID.generate_uuid(" + repr(file) + ") -> None (no és str)")
             return None
 
         fCano = self._canonical(file)
@@ -76,10 +89,12 @@ class ImageID:
 
         if new_uuid in self._uuid_to_file:
             print(f"ERROR: Col·lisió detectada per al fitxer {fCano}")
+            _trace("ImageID.generate_uuid(" + repr(file) + ") -> None (col·lisió)")
             return None
 
         self._file_to_uuid[fCano] = new_uuid
         self._uuid_to_file[new_uuid] = fCano
+        _trace("ImageID.generate_uuid(" + repr(file) + ") -> " + new_uuid)
         return new_uuid
 
     def get_uuid(self, file: str) -> str:
@@ -93,6 +108,7 @@ class ImageID:
         if res is None and file != "":
             # Pot ser un path relatiu al directori actual (p.ex. "generated_images/x.png")
             res = self._file_to_uuid.get(cfg.get_canonical_pathfile(file))
+        _trace("ImageID.get_uuid(" + repr(file) + ") -> " + str(res))
         return res
 
     def remove_uuid(self, uuid: str) -> None:
@@ -101,5 +117,6 @@ class ImageID:
 
         # S'ha d'esborrar dels DOS diccionaris, sinó el UUID no queda lliure
         fCano = self._uuid_to_file.pop(uuid, None)
+        _trace("ImageID.remove_uuid(" + repr(uuid) + ") -> " + ("esborrat" if fCano is not None else "no existia"))
         if fCano is not None:
             self._file_to_uuid.pop(fCano, None)
