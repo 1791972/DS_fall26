@@ -74,7 +74,8 @@ class SearchMetadata:
             # Si les metadades encara no s'han llegit del disc, es llegeixen ara
             if not self.image_data.is_loaded(uuid):
                 self.image_data.load_metadata(uuid)
-            if getter(uuid).find(sub) != -1:      # find() retorna -1 si no hi és
+            valor = getter(uuid)
+            if valor is not None and str(valor).find(sub) != -1:   # find() retorna -1 si no hi és
                 res.append(uuid)
         return res
 
@@ -98,6 +99,12 @@ class SearchMetadata:
 
     def date(self, sub: str) -> list:
         return self._search(self.image_data.get_created_date, sub)
+
+    def created_date(self, sub: str) -> list:
+        return self.date(sub)
+
+    def generated(self, sub: str) -> list:
+        return self._search(self.image_data.get_generated, sub)
 
     def and_operator(self, list1: list, list2: list) -> list:
         """UUID que apareixen en AMBDUES llistes (sense modificar-les)."""
@@ -125,6 +132,10 @@ class SearchMetadata:
                 vistos.add(uuid)
                 res.append(uuid)
         for uuid in list2:
+            if uuid not in vistos:
+                vistos.add(uuid)
+                res.append(uuid)
+        return res
             if uuid not in vistos:
                 vistos.add(uuid)
                 res.append(uuid)
