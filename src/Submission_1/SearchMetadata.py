@@ -77,6 +77,7 @@ class SearchMetadata:
             valor = getter(uuid)
             if valor is not None and str(valor).find(sub) != -1:   # find() retorna -1 si no hi és
                 res.append(uuid)
+        print("TRACE SearchMetadata cerca " + repr(sub) + " -> " + str(len(res)) + " de " + str(len(self.image_data.get_uuids())))
         return res
 
     def prompt(self, sub: str) -> list:
@@ -132,10 +133,6 @@ class SearchMetadata:
                 vistos.add(uuid)
                 res.append(uuid)
         for uuid in list2:
-            if uuid not in vistos:
-                vistos.add(uuid)
-                res.append(uuid)
-        return res
             if uuid not in vistos:
                 vistos.add(uuid)
                 res.append(uuid)
