@@ -53,20 +53,20 @@ class ImageFiles:
         path = str(path)
 
         if not os.path.isdir(path):
-            alt = os.path.join(cfg.get_root(), path)
-            if os.path.isdir(alt):
-                path = alt
+            alternativa = os.path.join(cfg.get_root(), path)
+            if os.path.isdir(alternativa):
+                path = alternativa
         path = os.path.abspath(path)
 
         self.previous_files = self.current_files
-        found = set()
+        encontrados = set()
 
-        for root, dirs, files in os.walk(path):
-            for name in files:
-                if name.lower().endswith(".png"):
-                    found.add(os.path.join(root, name))
+        for carpeta, subcarpetas, archivos in os.walk(path):
+            for nombre in archivos:
+                if nombre.lower().endswith(".png"):
+                    encontrados.add(os.path.join(carpeta, nombre))
 
-        self.current_files = found
+        self.current_files = encontrados
 
     def files_added(self) -> list:
         """Retorna una llista (de strings) amb els paths dels arxius
