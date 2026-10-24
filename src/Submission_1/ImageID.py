@@ -49,7 +49,7 @@ class ImageID:
         return "ImageID(" + str(len(self._file_to_uuid)) + " uuids)"
 
     @staticmethod
-    def _canonical(file: str) -> str:
+    def _canonica(file: str) -> str:
         """Un path absolut es converteix a canònic (relatiu a ROOT_DIR).
         Un path que ja és relatiu es deixa tal qual: tornar-lo a passar per
         cfg.get_canonical_pathfile() el trencaria ("../xxx.png")."""
@@ -69,16 +69,16 @@ class ImageID:
         if not isinstance(file, str):
             return None
 
-        fCano = self._canonical(file)
-        new_uuid = str(cfg.get_uuid(fCano))
+        ruta_canonica = self._canonica(file)
+        nuevo_uuid = str(cfg.get_uuid(ruta_canonica))
 
-        if new_uuid in self._uuid_to_file:
-            print(f"ERROR: Col·lisió detectada per al fitxer {fCano}")
+        if nuevo_uuid in self._uuid_to_file:
+            print(f"ERROR: Col·lisió detectada per al fitxer {ruta_canonica}")
             return None
 
-        self._file_to_uuid[fCano] = new_uuid
-        self._uuid_to_file[new_uuid] = fCano
-        return new_uuid
+        self._file_to_uuid[ruta_canonica] = nuevo_uuid
+        self._uuid_to_file[nuevo_uuid] = ruta_canonica
+        return nuevo_uuid
 
     def get_uuid(self, file: str) -> str:
         """Retorna el UUID associat a l'arxiu, si ja ha estat generat.
@@ -87,15 +87,15 @@ class ImageID:
         if not isinstance(file, str):
             return None
 
-        res = self._file_to_uuid.get(self._canonical(file))
-        if res is None and file != "":
-            res = self._file_to_uuid.get(cfg.get_canonical_pathfile(file))
-        return res
+        resultado = self._file_to_uuid.get(self._canonica(file))
+        if resultado is None and file != "":
+            resultado = self._file_to_uuid.get(cfg.get_canonical_pathfile(file))
+        return resultado
 
     def remove_uuid(self, uuid: str) -> None:
         """Elimina el UUID del registre d'identificadors actius.
         Després d'eliminar-lo, aquest UUID es podrà tornar a utilitzar."""
 
-        fCano = self._uuid_to_file.pop(uuid, None)
-        if fCano is not None:
-            self._file_to_uuid.pop(fCano, None)
+        ruta_canonica = self._uuid_to_file.pop(uuid, None)
+        if ruta_canonica is not None:
+            self._file_to_uuid.pop(ruta_canonica, None)
