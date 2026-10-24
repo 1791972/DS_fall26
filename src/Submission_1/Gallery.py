@@ -89,45 +89,45 @@ class Gallery:
             print("ERROR: No s'ha trobat cap arxiu JSON")
             return
 
-        path = file if os.path.isabs(file) else os.path.join(cfg.get_root(), file)
-        if not os.path.isfile(path) and os.path.isfile(file):
-            path = file
-        if not os.path.isfile(path):
-            print(f"ERROR: No s'ha trobat cap arxiu JSON {path}")
+        ruta_json = file if os.path.isabs(file) else os.path.join(cfg.get_root(), file)
+        if not os.path.isfile(ruta_json) and os.path.isfile(file):
+            ruta_json = file
+        if not os.path.isfile(ruta_json):
+            print(f"ERROR: No s'ha trobat cap arxiu JSON {ruta_json}")
             return
 
         try:
-            with open(path, 'r', encoding='utf-8') as f:
-                data = json.load(f)
-        except (OSError, ValueError) as e:
-            print(f"ERROR: No s'ha pogut llegir l'arxiu JSON {path}: {e}")
+            with open(ruta_json, 'r', encoding='utf-8') as archivo:
+                datos = json.load(archivo)
+        except (OSError, ValueError) as error:
+            print(f"ERROR: No s'ha pogut llegir l'arxiu JSON {ruta_json}: {error}")
             return
 
-        self.gallery_name = str(data.get("gallery_name", ""))
-        self.description = str(data.get("description", ""))
-        self.created_date = str(data.get("created_date", ""))
+        self.gallery_name = str(datos.get("gallery_name", ""))
+        self.description = str(datos.get("description", ""))
+        self.created_date = str(datos.get("created_date", ""))
 
-        llista = data.get("images", [])
+        lista = datos.get("images", [])
 
-        prefix = os.path.basename(os.path.normpath(cfg.get_root())) + "/"
+        prefijo = os.path.basename(os.path.normpath(cfg.get_root())) + "/"
 
-        for p in llista:
-            rel = p.replace("\\", "/")
-            candidats = [rel]
-            if rel.startswith(prefix):
-                candidats.append(rel[len(prefix):])
+        for ruta in lista:
+            relativa = ruta.replace("\\", "/")
+            candidatas = [relativa]
+            if relativa.startswith(prefijo):
+                candidatas.append(relativa[len(prefijo):])
 
-            fCano = None
-            for c in candidats:
-                if os.path.isfile(os.path.join(cfg.get_root(), c)):
-                    fCano = c
+            ruta_relativa = None
+            for candidata in candidatas:
+                if os.path.isfile(os.path.join(cfg.get_root(), candidata)):
+                    ruta_relativa = candidata
                     break
-            if fCano is None:
+            if ruta_relativa is None:
                 continue
 
-            uuid = self.image_id.get_uuid(fCano)
+            uuid = self.image_id.get_uuid(ruta_relativa)
             if uuid is None:
-                uuid = self.image_id.generate_uuid(fCano)
+                uuid = self.image_id.generate_uuid(ruta_relativa)
             if uuid is not None:
                 self.images.append(uuid)
 
