@@ -62,8 +62,7 @@ Notes:
 import os
 import cfg
 
-# --- TEMPORAL (diagnòstic): imprimeix les crides que fa el test. Posa DEBUG = False
-# --- (o esborra les línies "_trace") quan ja no calgui.
+
 DEBUG = True
 _ntrace = 0
 
@@ -116,7 +115,6 @@ class ImageData:
         """Crea una entrada per a la imatge amb l'UUID i el path especificats.
         Inicialment les metadades estan buides (no llegides del disc)."""
 
-        # Insercions sense sentit o imatge ja existent: s'ignoren
         if not isinstance(uuid, str) or not isinstance(file, str) or file == "":
             _trace("ImageData.add_image(" + repr(uuid) + ", " + repr(file) + ") -> ignorada (sense sentit)")
             return
@@ -147,7 +145,7 @@ class ImageData:
     def _full_path(self, file: str) -> str:
         path = os.path.join(cfg.get_root(), file)
         if not os.path.isfile(path) and os.path.isfile(file):
-            return file                 # era un path vàlid des del directori actual
+            return file                 
         return path
 
     def load_metadata(self, uuid: str) -> None:
@@ -172,7 +170,6 @@ class ImageData:
         entry['loaded'] = True
 
     def _get_field(self, uuid: str, name: str) -> str:
-        # Només consulta el que ja s'ha carregat amb load_metadata()
         if uuid not in self.data:
             _trace("ImageData." + name + "(" + repr(uuid) + ") -> uuid desconegut")
             return None
