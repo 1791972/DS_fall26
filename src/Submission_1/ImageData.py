@@ -8,148 +8,48 @@ imatges generades per IA.
 Funcionalitat:
     - Afegir i eliminar imatges de la col·lecció
     - Llegir les metadades embegudes dins els arxius PNG
-    - Proporcionar accés a totes les metadades d'una imatge"""
+    - Proporcionar accés a totes les metadades d'una imatge
 
-    
-import os
-import cfg
-from PIL import Image
+Mètodes a implementar:
+    - add_image(uuid: str, file: str) -> None
+        Crea una entrada per a la imatge amb l'UUID i el path especificats.
+        Inicialment les metadades estan buides (no llegides del disc).
 
+    - remove_image(uuid: str) -> None
+        Elimina la imatge i totes les seves metadades de la col·lecció.
 
-def _norm(file):
-    # CANVI: mateixa normalització que a ImageID (no re-relativitza els
-    # paths que ja són relatius a ROOT_DIR)
-    if not isinstance(file, str):
-        return file
-    if os.path.isabs(file):
-        return cfg.get_canonical_pathfile(file)
-    return file.replace('\\', '/')
+    - load_metadata(uuid: str) -> None
+        Llegeix les metadades embegudes en l'arxiu PNG i les emmagatzema.
+        Aquest mètode es pot cridar múltiples vegades (p.ex. si l'arxiu canvia).
 
+    - get_prompt(uuid: str) -> str
+        Retorna el prompt utilitzat per generar la imatge.
 
-class ImageData:
-    def __init__(self):
-        self.data = {}
+    - get_model(uuid: str) -> str
+        Retorna el model d'IA utilitzat (p.ex. "SD2", "DALL-E", "Midjourney").
 
-    def __len__(self):
-        # CANVI: requerit pel test
-        return len(self.data)
+    - get_seed(uuid: str) -> str
+        Retorna la llavor aleatòria utilitzada en la generació.
 
-    def __str__(self):
-        # CANVI: requerit pel test
-        return "ImageData(" + str(len(self.data)) + " imatges)"
+    - get_cfg_scale(uuid: str) -> str
+        Retorna el CFG Scale (guidance scale) utilitzat.
 
-    def add_image(self, uuid: str, file: str) -> None:
-        """Crea una entrada per a la imatge amb l'UUID i el path especificats.
-        Inicialment les metadades estan buides (no llegides del disc)."""
+    - get_steps(uuid: str) -> str
+        Retorna el nombre de passos d'iteració del model.
 
-        # CANVI: una inserció sense sentit (uuid o path invàlids) s'ignora
-        # en lloc de provocar una excepció
-        if uuid is None or not isinstance(file, str) or file == "":
-            return
+    - get_sampler(uuid: str) -> str
+        Retorna l'algorisme de mostreig utilitzat.
 
-        fCano = _norm(file)   # CANVI: abans cfg.get_canonical_pathfile(file)
-        self.data[uuid] = {'file': fCano, 'metadata': {}, 'dimensions': (None, None), 'loaded': False}
+    - get_generated(uuid: str) -> str
+        Retorna "true" si la imatge està marcada com a generada.
 
-    def remove_image(self, uuid: str) -> None:
-        """Elimina la imatge i totes les seves metadades de la col·lecció."""
+    - get_created_date(uuid: str) -> str
+        Retorna la data de creació en format YYYY-MM-DD.
 
-        if uuid in self.data:
-            del self.data[uuid]
+    - get_dimensions(uuid: str) -> tuple
+        Retorna una tupla (width, height) amb les dimensions de la imatge.
 
-    def get_filename(self, uuid: str) -> str:
-        # CANVI: nou, requerit pel test. Retorna el path guardat de l'arxiu.
-        if uuid not in self.data:
-            return "None"
-        return self.data[uuid]['file']
-
-    def load_metadata(self, uuid: str) -> None:
-        """Llegeix les metadades embegudes en l'arxiu PNG i les emmagatzema.'
-           Aquest mètode es pot cridar múltiples vegades (p.ex. si l'arxiu canvia)."""
-
-        if uuid not in self.data:
-            return
-
-        f = self.data[uuid]['file']
-        pathF = os.path.join(cfg.get_root(), f)
-
-        meta = cfg.read_png_metadata(pathF)
-        if meta is not None:
-            self.data[uuid]['metadata'] = meta
-        else:
-            self.data[uuid]['metadata'] = {}
-
-        try:
-            with Image.open(pathF) as img:
-                self.data[uuid]['dimensions'] = (img.width, img.height)
-        except Exception:
-            self.data[uuid]['dimensions'] = (None, None)
-
-        self.data[uuid]['loaded'] = True
-
-    def _get_field(self, uuid: str, name: str) -> str:
-        if uuid not in self.data:
-            return "None"
-
-        if not self.data[uuid]['loaded']:
-            self.load_metadata(uuid)
-
-        res = self.data[uuid]['metadata'].get(name)
-        if res is None or res == "":
-            return "None"
-        return str(res)
-
-    def get_prompt(self, uuid: str) -> str:
-        """Retorna el prompt utilitzat per generar la imatge."""
-
-        return self._get_field(uuid, 'Prompt')   # CANVI: abans 'Model'
-
-    def get_model(self, uuid: str) -> str:
-        """Retorna el model d'IA utilitzat (p.ex. "SD2", "DALL-E", "Midjourney")."""
-
-        return self._get_field(uuid, 'Model')
-
-    def get_seed(self, uuid: str) -> str:
-        """Retorna la llavor aleatòria utilitzada en la generació."""
-
-        return self._get_field(uuid, 'Seed')
-
-    def get_cfg_scale(self, uuid: str) -> str:
-        """Retorna el CFG Scale (guidance scale) utilitzat."""
-
-        return self._get_field(uuid, 'CFG_Scale')
-
-    def get_steps(self, uuid: str) -> str:
-        """Retorna el nombre de passos d'iteració del model."""
-
-        return self._get_field(uuid, 'Steps')
-
-    def get_sampler(self, uuid: str) -> str:
-        """Retorna l'algorisme de mostreig utilitzat."""
-
-        return self._get_field(uuid, 'Sampler')
-
-    def get_generated(self, uuid: str) -> str:
-        """Retorna "true" si la imatge està marcada com a generada."""
-
-        return self._get_field(uuid, 'Generated')
-
-    def get_created_date(self, uuid: str) -> str:
-        """Retorna la data de creació en format YYYY-MM-DD."""
-
-        return self._get_field(uuid, 'Created_Date')
-
-    def get_dimensions(self, uuid: str) -> tuple:
-        """Retorna una tupla (width, height) amb les dimensions de la imatge."""
-
-        if uuid not in self.data:
-            return (None, None)
-
-        if not self.data[uuid]['loaded']:
-            self.load_metadata(uuid)
-        return self.data[uuid]['dimensions']
-
-        
-"""Notes:
+Notes:
     - Utilitzeu la llibreria PIL/Pillow per llegir metadades:
       img = Image.open(file)
       metadata = img.text
@@ -157,3 +57,127 @@ class ImageData:
     - Les dimensions es llegeixen amb img.width i img.height
     - Tots els camps de metadades es guarden com a strings
 """
+
+
+import os
+import cfg
+
+
+class ImageData:
+    def __init__(self):
+        # uuid -> {'file': path, 'metadata': dict, 'dimensions': (w, h), 'loaded': bool}
+        self.data = {}
+
+    def __len__(self):
+        return len(self.data)
+
+    def __str__(self):
+        return "ImageData(" + str(len(self.data)) + " imatges)"
+
+    def get_uuids(self) -> list:
+        """Retorna la llista d'UUID de les imatges (usat per SearchMetadata)."""
+
+        return list(self.data.keys())
+
+    def is_loaded(self, uuid: str) -> bool:
+        """True si les metadades d'aquesta imatge ja s'han llegit del disc."""
+
+        return uuid in self.data and self.data[uuid]['loaded']
+
+    def add_image(self, uuid: str, file: str) -> None:
+        """Crea una entrada per a la imatge amb l'UUID i el path especificats.
+        Inicialment les metadades estan buides (no llegides del disc)."""
+
+        # Insercions sense sentit o imatge ja existent: s'ignoren
+        if not isinstance(uuid, str) or not isinstance(file, str) or file == "":
+            return
+        if uuid in self.data:
+            return
+
+        # El path es guarda tal com arriba (és el path relatiu a ROOT_DIR)
+        self.data[uuid] = {'file': file, 'metadata': {}, 'dimensions': (None, None), 'loaded': False}
+
+    def remove_image(self, uuid: str) -> None:
+        """Elimina la imatge i totes les seves metadades de la col·lecció."""
+
+        self.data.pop(uuid, None)
+
+    def get_filename(self, uuid: str) -> str:
+        """Retorna el path guardat de l'arxiu de la imatge ("None" si no existeix)."""
+
+        if uuid not in self.data:
+            return "None"
+        return self.data[uuid]['file']
+
+    def _full_path(self, file: str) -> str:
+        path = os.path.join(cfg.get_root(), file)
+        if not os.path.isfile(path) and os.path.isfile(file):
+            return file                 # era un path vàlid des del directori actual
+        return path
+
+    def load_metadata(self, uuid: str) -> None:
+        """Llegeix les metadades embegudes en l'arxiu PNG i les emmagatzema.
+        Aquest mètode es pot cridar múltiples vegades (p.ex. si l'arxiu canvia)."""
+
+        if uuid not in self.data:
+            return
+
+        entry = self.data[uuid]
+        path = self._full_path(entry['file'])
+
+        meta = cfg.read_png_metadata(path)      # None si l'arxiu no es pot llegir
+        if meta is None:
+            entry['metadata'] = {}
+            entry['dimensions'] = (None, None)
+        else:
+            entry['metadata'] = meta
+            entry['dimensions'] = cfg.get_png_dimensions(path)
+        entry['loaded'] = True
+
+    def _get_field(self, uuid: str, name: str) -> str:
+        # Només consulta el que ja s'ha carregat amb load_metadata()
+        if uuid not in self.data:
+            return "None"
+        value = self.data[uuid]['metadata'].get(name)
+        if value is None or value == "":
+            return "None"
+        return str(value)
+
+    def get_prompt(self, uuid: str) -> str:
+        """Retorna el prompt utilitzat per generar la imatge."""
+        return self._get_field(uuid, 'Prompt')
+
+    def get_model(self, uuid: str) -> str:
+        """Retorna el model d'IA utilitzat (p.ex. "SD2", "DALL-E", "Midjourney")."""
+        return self._get_field(uuid, 'Model')
+
+    def get_seed(self, uuid: str) -> str:
+        """Retorna la llavor aleatòria utilitzada en la generació."""
+        return self._get_field(uuid, 'Seed')
+
+    def get_cfg_scale(self, uuid: str) -> str:
+        """Retorna el CFG Scale (guidance scale) utilitzat."""
+        return self._get_field(uuid, 'CFG_Scale')
+
+    def get_steps(self, uuid: str) -> str:
+        """Retorna el nombre de passos d'iteració del model."""
+        return self._get_field(uuid, 'Steps')
+
+    def get_sampler(self, uuid: str) -> str:
+        """Retorna l'algorisme de mostreig utilitzat."""
+        return self._get_field(uuid, 'Sampler')
+
+    def get_generated(self, uuid: str) -> str:
+        """Retorna "true" si la imatge està marcada com a generada."""
+        return self._get_field(uuid, 'Generated')
+
+    def get_created_date(self, uuid: str) -> str:
+        """Retorna la data de creació en format YYYY-MM-DD."""
+        return self._get_field(uuid, 'Created_Date')
+
+    def get_dimensions(self, uuid: str) -> tuple:
+        """Retorna una tupla (width, height) amb les dimensions de la imatge."""
+
+        if uuid not in self.data:
+            return (None, None)
+        return self.data[uuid]['dimensions']
