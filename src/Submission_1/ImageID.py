@@ -36,8 +36,6 @@ Notes:
 import os
 import cfg
 
-# --- TEMPORAL (diagnòstic): imprimeix les crides que fa el test. Posa DEBUG = False
-# --- (o esborra les línies "_trace") quan ja no calgui.
 DEBUG = True
 _ntrace = 0
 
@@ -51,10 +49,8 @@ def _trace(msg):
 
 class ImageID:
     def __init__(self):
-        # Dos diccionaris (hash): permeten buscar en els dos sentits en O(1).
-        # (el nom _file_to_uuid és el que utilitza l'autograder de la Fase 2)
-        self._file_to_uuid = {}   # path canònic -> uuid
-        self._uuid_to_file = {}   # uuid -> path canònic
+        self._file_to_uuid = {}   # path -> uuid
+        self._uuid_to_file = {}   # uuid -> path
 
     def __len__(self):
         return len(self._file_to_uuid)
@@ -106,7 +102,6 @@ class ImageID:
 
         res = self._file_to_uuid.get(self._canonical(file))
         if res is None and file != "":
-            # Pot ser un path relatiu al directori actual (p.ex. "generated_images/x.png")
             res = self._file_to_uuid.get(cfg.get_canonical_pathfile(file))
         _trace("ImageID.get_uuid(" + repr(file) + ") -> " + str(res))
         return res
@@ -115,7 +110,6 @@ class ImageID:
         """Elimina el UUID del registre d'identificadors actius.
         Després d'eliminar-lo, aquest UUID es podrà tornar a utilitzar."""
 
-        # S'ha d'esborrar dels DOS diccionaris, sinó el UUID no queda lliure
         fCano = self._uuid_to_file.pop(uuid, None)
         _trace("ImageID.remove_uuid(" + repr(uuid) + ") -> " + ("esborrat" if fCano is not None else "no existia"))
         if fCano is not None:
