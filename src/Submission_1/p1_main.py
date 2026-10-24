@@ -16,8 +16,7 @@ Exemples d'ús:
 """
 
 
-import os
-import cfg 
+import cfg
 from ImageFiles import ImageFiles
 from ImageID import ImageID
 from ImageData import ImageData
@@ -25,50 +24,40 @@ from ImageViewer import ImageViewer
 from Gallery import Gallery
 from SearchMetadata import SearchMetadata
 
+
 def main():
-    print("PROVES PER TESTEJAR LES FUNCIONALITATS\n")
+    # 1. Llistat dels PNG de la col·lecció
+    files = ImageFiles()
+    files.reload_fs(cfg.get_root())
+    print(files)
 
-    image_files = ImageFiles()
-    image_files.reload_fs(cfg.get_root())
-    added_files = image_files.files_added()
-    print(f"Fitxer trobats: {len(added_files)}")
-
+    # 2. UUID de cada imatge + 3. metadades
     image_id = ImageID()
-    for path in added_files:
-        image_id.generate_uuid(path)
-
     image_data = ImageData()
-    for path in added_files:
-        uuid = image_id.get_uuid(path)
-        if uuid:
-            image_data.add_image(uuid, path)
+    for f in files.files_added():
+        rel = cfg.get_canonical_pathfile(f)      # path relatiu a ROOT_DIR
+        uuid = image_id.generate_uuid(rel)
+        if uuid is not None:
+            image_data.add_image(uuid, rel)
+            image_data.load_metadata(uuid)
+    print(image_id)
+    print(image_data)
 
-    image_viewer = ImageViewer(image_data = image_data)
-    if added_files:
-        uuid1 = image_id.get_uuid(added_files)
-        print("\nMostrant metadades de la primera imatge:")
-        image_viewer.print_image(uuid1)
+    # 4. Visualitzar una imatge
+    viewer = ImageViewer(image_data)
+    primera = image_data.get_uuids()[0]
+    viewer.show_image(primera, cfg.DISPLAY_MODE)
 
-    gallery = Gallery(image_id = image_id, image_viewer = image_viewer)
-    json = os.paht.join(cfg.get_root(), "galeries", "sample_gallery.json")
-    if os.path.exists(json):
-        print("\nCarregant galeria JSON")
-        gallery.load_file(json)
-        gallery.show()
+    # 5. Cerques i 6. galeria a partir d'una cerca
+    search = SearchMetadata(image_data)
+    trobades = search.or_operator(search.prompt("portrait"), search.model("SD2"))
+    print("Cerca: " + str(len(trobades)) + " imatges")
 
-    search_metadata = SearchMetadata(image_data = image_data)
-    res = search_metadata.prompt("cat")
-    print(f"\nCerques amb la subcadena 'cat' al prompt: {len(res)} trobats.")
+    galeria = Gallery(image_id, viewer)
+    for uuid in trobades:
+        galeria.add_image_at_end(uuid)
+    galeria.show()
 
-    search_gallery = Gallery(image_id = image_id, image_viewer = image_viewer)
-    search_gallery.gallery_name = "Cerca: Cat"
-    search_gallery.description = "Galeria generada a partir dels resultats de cerca"
-    for uuid in res:
-        search_gallery.add_image_at_end(uuid)
-    print("\nMostrant galeria dinàmica creada a partir de la cerca:")
-    search_gallery.show()
 
 if __name__ == "__main__":
     main()
-
-
