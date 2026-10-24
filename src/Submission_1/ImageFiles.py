@@ -35,8 +35,8 @@ import cfg
 
 class ImageFiles:
     def __init__(self):
-        self.current_files = set()    # arxius trobats a l'última lectura
-        self.previous_files = set()   # arxius trobats a la lectura anterior
+        self.current_files = set()
+        self.previous_files = set()
 
     def __len__(self):
         return len(self.current_files)
