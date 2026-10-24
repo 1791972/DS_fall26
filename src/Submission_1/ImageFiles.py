@@ -7,64 +7,78 @@ Aquesta classe s'encarrega de gestionar el llistat d'arxius PNG dins la col·lec
 Funcionalitat:
     - Recórrer el filesystem a partir de ROOT_DIR per trobar tots els arxius PNG
     - Mantenir una representació en memòria dels arxius presents
-    - Detectar quins arxius s'han afegit o eliminat des de l'última lectura"""
+    - Detectar quins arxius s'han afegit o eliminat des de l'última lectura
+
+Mètodes a implementar:
+    - reload_fs(path: str) -> None
+        Recorre el directori especificat i actualitza la llista d'arxius PNG.
+        Detecta els arxius nous i els que s'han eliminat.
+
+    - files_added() -> list
+        Retorna una llista (de strings) amb els paths relatius dels arxius
+        que s'han afegit des de l'última crida a reload_fs().
+
+    - files_removed() -> list
+        Retorna una llista (de strings) amb els paths relatius dels arxius
+        que s'han eliminat des de l'última crida a reload_fs().
+
+Notes:
+    - Els paths han de ser sempre relatius a ROOT_DIR
+    - Només considereu arxius amb extensió .png (case-insensitive)
+    - Heu de recórrer tots els subdirectoris recursivament
+"""
 
 
 import os
 import cfg
 
+
 class ImageFiles:
     def __init__(self):
-        self.current_files = set()
-        self.previous_files = set()
+        # Dos conjunts (set) de paths: amb sets, "afegits" i "eliminats" són
+        # simples diferències de conjunts.
+        self.current_files = set()    # arxius trobats a l'última lectura
+        self.previous_files = set()   # arxius trobats a la lectura anterior
+
+    def __len__(self):
+        return len(self.current_files)
 
     def __str__(self):
         return "ImageFiles(" + str(len(self.current_files)) + " arxius)"
 
-    def reload_fs(self, path: str):
+    def reload_fs(self, path: str) -> None:
         """Recorre el directori especificat i actualitza la llista d'arxius PNG.
-           Detecta els arxius nous i els que s'han eliminat."""
+        Detecta els arxius nous i els que s'han eliminat."""
 
         if path is None:
             path = cfg.get_root()
+        path = str(path)
 
-        search_path = path if os.path.isabs(path) else os.path.join(cfg.get_root(), path)
+        # Si el path no existeix tal qual, es prova com a relatiu a ROOT_DIR
+        if not os.path.isdir(path):
+            alt = os.path.join(cfg.get_root(), path)
+            if os.path.isdir(alt):
+                path = alt
+        path = os.path.abspath(path)
 
-        self.previous_files = set(self.current_files)
-        new_files = set()
+        self.previous_files = self.current_files
+        found = set()
 
-        if not os.path.exists(search_path):
-            self.current_files = new_files
-            return
+        for root, dirs, files in os.walk(path):
+            for name in files:
+                if name.lower().endswith(".png"):
+                    found.add(os.path.join(root, name))
 
-        for root, _, files in os.walk(search_path):
-            for f in files:
-                if f.lower().endswith('.png'):
-                    pathT = os.path.join(root, f)
-                    pathC = cfg.get_canonical_pathfile(pathT)
-                    new_files.add(pathC)
+        self.current_files = found
 
-        self.current_files = new_files
-        
+    def files_added(self) -> list:
+        """Retorna una llista (de strings) amb els paths dels arxius
+        que s'han afegit des de l'última crida a reload_fs()."""
 
-    def files_added(self):
-        """Retorna una llista (de strings) amb els paths relatius dels arxius
-           que s'han afegit des de l'última crida a reload_fs()."""
-        
-        added = self.current_files - self.previous_files
-        return list(added)
+        return sorted(self.current_files - self.previous_files)
 
-    def files_removed(self):
-        """Retorna una llista (de strings) amb els paths relatius dels arxius
-           que s'han eliminat des de l'última crida a reload_fs()."""
+    def files_removed(self) -> list:
+        """Retorna una llista (de strings) amb els paths dels arxius
+        que s'han eliminat des de l'última crida a reload_fs()."""
 
-        removed = self.previous_files - self.current_files
-        return list(removed)
-
-
-"""
-   Notes:
-    - Els paths han de ser sempre relatius a ROOT_DIR
-    - Només considereu arxius amb extensió .png (case-insensitive)
-    - Heu de recórrer tots els subdirectoris recursivament
-"""
+        return sorted(self.previous_files - self.current_files)
