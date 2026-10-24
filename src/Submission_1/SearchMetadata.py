@@ -75,11 +75,10 @@ class SearchMetadata:
         if not hasattr(self.image_data, 'get_uuids'):
             return res
         for uuid in self.image_data.get_uuids():
-            # Si les metadades encara no s'han llegit del disc, es llegeixen ara
             if not self.image_data.is_loaded(uuid):
                 self.image_data.load_metadata(uuid)
             valor = getter(uuid)
-            if valor is not None and str(valor).find(sub) != -1:   # find() retorna -1 si no hi és
+            if valor is not None and str(valor).find(sub) != -1:   
                 res.append(uuid)
         return res
 
@@ -134,7 +133,7 @@ class SearchMetadata:
 
         list1 = list1 if list1 is not None else []
         list2 = list2 if list2 is not None else []
-        in_second = set(list2)               # cerca O(1) en lloc de recórrer list2
+        in_second = set(list2)               
         vistos = set()
         res = []
         for uuid in list1:
