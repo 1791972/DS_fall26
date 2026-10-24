@@ -19,43 +19,68 @@ Format JSON d'una galeria:
     "generated_images/city_neon_12.png",
     "generated_images/urban_street_45.png"
   ]
-}"""
+}
+
+Mètodes a implementar:
+    - load_file(file: str) -> None
+        Llegeix un arxiu JSON amb la definició de la galeria.
+        Ha de validar que cada imatge referenciada existeix a la col·lecció.
+        Si una imatge no existeix, l'ignora i continua processant.
+        Emmagatzema internament els UUID de les imatges vàlides.
+
+    - show() -> None
+        Visualitza totes les imatges de la galeria en ordre utilitzant
+        ImageViewer.show_image().
+
+    - add_image_at_end(uuid: str) -> None
+        Afegeix una imatge al final de la galeria.
+
+    - remove_first_image() -> None
+        Elimina la primera imatge de la galeria.
+
+    - remove_last_image() -> None
+        Elimina l'última imatge de la galeria.
+
+Notes:
+    - Utilitzeu la llibreria json per llegir els arxius
+    - Els paths dins el JSON són relatius a ROOT_DIR
+    - Cada galeria és un objecte independent (instància de Gallery)
+    - Podeu tenir múltiples galeries actives simultàniament
+    - Les operacions d'afegir/eliminar són ràpides (no busquen a la llista)
+"""
 
 
 import os
-import cfg
 import json
+import cfg
 from ImageID import ImageID
-from ImageViewer import ImageViewer
-
-
-def _norm(file):
-    # CANVI: mateixa normalització que a ImageID (no re-relativitza els
-    # paths que ja són relatius a ROOT_DIR)
-    if not isinstance(file, str):
-        return file
-    if os.path.isabs(file):
-        return cfg.get_canonical_pathfile(file)
-    return file.replace('\\', '/')
 
 
 class Gallery:
-    def __init__(self, image_id, image_viewer):
+    def __init__(self, image_id=None, image_viewer=None):
+        self.image_id = image_id if image_id is not None else ImageID()
+        self.image_viewer = image_viewer
         self.gallery_name = ""
         self.description = ""
         self.created_date = ""
-        self.uuids = []
-        self.image_id = image_id if image_id is not None else ImageID()
-        # CANVI: ImageViewer exigeix un paràmetre (image_data)
-        self.image_viewer = image_viewer if image_viewer is not None else ImageViewer(None)
+        # Llista d'UUID. (RecommenderSystem de la Fase 2 espera l'atribut "images")
+        self.images = []
+
+    @property
+    def uuids(self):
+        return self.images
 
     def __len__(self):
-        # CANVI: requerit pel test
-        return len(self.uuids)
+        return len(self.images)
 
     def __str__(self):
-        # CANVI: requerit pel test
-        return "Gallery(" + self.gallery_name + ", " + str(len(self.uuids)) + " imatges)"
+        return "Gallery(" + self.gallery_name + ", " + str(len(self.images)) + " imatges)"
+
+    def _clear(self):
+        self.gallery_name = ""
+        self.description = ""
+        self.created_date = ""
+        self.images = []
 
     def load_file(self, file: str) -> None:
         """Llegeix un arxiu JSON amb la definició de la galeria.
@@ -63,32 +88,49 @@ class Gallery:
         Si una imatge no existeix, l'ignora i continua processant.
         Emmagatzema internament els UUID de les imatges vàlides."""
 
-        path = os.path.join(cfg.get_root(), file) if not os.path.isabs(file) else file
-        if not os.path.isfile(path):
-            print(f"ERROR: No s'ha trobat cap arxiu JSON {file}")
+        # Cada load_file() esborra el contingut previ, també si l'arxiu no existeix
+        self._clear()
+
+        if not isinstance(file, str) or file == "":
+            print(f"ERROR: No s'ha trobat cap arxiu JSON {file if file else ''}")
             return
 
-        with open(path, 'r') as f:
-            data = json.load(f)
+        path = file if os.path.isabs(file) else os.path.join(cfg.get_root(), file)
+        if not os.path.isfile(path) and os.path.isfile(file):
+            path = file
+        if not os.path.isfile(path):
+            print(f"ERROR: No s'ha trobat cap arxiu JSON {path}")
+            return
 
-        self.gallery_name = data.get("gallery_name", "")
-        self.description = data.get("description", "")
-        self.created_date = data.get("created_date", "")
-        self.uuids = []
+        try:
+            with open(path, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+        except (OSError, ValueError) as e:
+            print(f"ERROR: No s'ha pogut llegir l'arxiu JSON {path}: {e}")
+            return
+        if not isinstance(data, dict):
+            print(f"ERROR: L'arxiu JSON {path} no té el format d'una galeria")
+            return
 
-        # CANVI: prefix "generated_images/" que pot venir als paths del JSON
-        # (l'exemple de l'enunciat el porta, però els paths són relatius a ROOT_DIR)
+        self.gallery_name = str(data.get("gallery_name", ""))
+        self.description = str(data.get("description", ""))
+        self.created_date = str(data.get("created_date", ""))
+
+        llista = data.get("images", [])
+        if not isinstance(llista, list):
+            return
+
+        # Els paths del JSON són relatius a ROOT_DIR, però l'exemple de
+        # l'enunciat els porta amb el prefix "generated_images/": es proven tots dos.
         prefix = os.path.basename(os.path.normpath(cfg.get_root())) + "/"
 
-        for p in data.get("images", []):
-            # CANVI: abans cfg.get_canonical_pathfile(p), que trencava els paths
-            # relatius. Ara es proven els candidats i es tria el que existeix.
-            fCano = _norm(p)
-            if not isinstance(fCano, str):
+        for p in llista:
+            if not isinstance(p, str):
                 continue
-            candidats = [fCano]
-            if fCano.startswith(prefix):
-                candidats.append(fCano[len(prefix):])
+            rel = p.replace("\\", "/")
+            candidats = [rel]
+            if rel.startswith(prefix):
+                candidats.append(rel[len(prefix):])
 
             fCano = None
             for c in candidats:
@@ -96,18 +138,13 @@ class Gallery:
                     fCano = c
                     break
             if fCano is None:
-                continue   # la imatge no existeix: s'ignora
+                continue                      # la imatge no existeix: s'ignora
 
-            # CANVI: "is not None" (amb __len__ un ImageID buit seria "fals")
-            if self.image_id is not None:
-                new_uuid = self.image_id.get_uuid(fCano)
-                if new_uuid is None:
-                    new_uuid = self.image_id.generate_uuid(fCano)   # CANVI: abans self.imge_id
-            else:
-                new_uuid = str(cfg.get_uuid(fCano))
-
-            if new_uuid:
-                self.uuids.append(new_uuid)
+            uuid = self.image_id.get_uuid(fCano)
+            if uuid is None:
+                uuid = self.image_id.generate_uuid(fCano)
+            if uuid is not None:
+                self.images.append(uuid)
 
     def show(self) -> None:
         """Visualitza totes les imatges de la galeria en ordre utilitzant
@@ -116,10 +153,10 @@ class Gallery:
         print(f"Galeria:  {self.gallery_name}")
         print(f"Descripció:  {self.description}")
         print(f"Data:  {self.created_date}")
-        print(f"Total imatges:  {len(self.uuids)}")
+        print(f"Total imatges:  {len(self.images)}")
 
-        for uuid in self.uuids:
-            if self.image_viewer is not None:   # CANVI: "is not None"
+        for uuid in self.images:
+            if self.image_viewer is not None:
                 self.image_viewer.show_image(uuid, cfg.DISPLAY_MODE)
             else:
                 print(f"UUID: {uuid}")
@@ -127,25 +164,18 @@ class Gallery:
     def add_image_at_end(self, uuid: str) -> None:
         """Afegeix una imatge al final de la galeria."""
 
-        self.uuids.append(uuid)
+        if uuid is None:
+            return
+        self.images.append(uuid)
 
     def remove_first_image(self) -> None:
         """Elimina la primera imatge de la galeria."""
 
-        if len(self.uuids) > 0:
-            self.uuids.pop(0)   # CANVI: abans self.image_uuids.pop(0)
+        if len(self.images) > 0:
+            del self.images[0]
 
     def remove_last_image(self) -> None:
         """Elimina l'última imatge de la galeria."""
 
-        if len(self.uuids) > 0:
-            self.uuids.pop()
-
-
-"""Notes:
-    - Utilitzeu la llibreria json per llegir els arxius
-    - Els paths dins el JSON són relatius a ROOT_DIR
-    - Cada galeria és un objecte independent (instància de Gallery)
-    - Podeu tenir múltiples galeries actives simultàniament
-    - Les operacions d'afegir/eliminar són ràpides (no busquen a la llista)
-"""
+        if len(self.images) > 0:
+            self.images.pop()
