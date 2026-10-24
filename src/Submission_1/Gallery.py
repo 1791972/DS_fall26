@@ -55,16 +55,6 @@ import json
 import cfg
 from ImageID import ImageID
 
-DEBUG = True
-_ntrace = 0
-
-
-def _trace(msg):
-    global _ntrace
-    if DEBUG and _ntrace < 1500:
-        _ntrace += 1
-        print("TRACE " + msg)
-
 
 class Gallery:
     def __init__(self, image_id=None, image_viewer=None):
@@ -74,10 +64,6 @@ class Gallery:
         self.description = ""
         self.created_date = ""
         self.images = []
-
-    @property
-    def uuids(self):
-        return self.images
 
     def __len__(self):
         return len(self.images)
@@ -92,12 +78,6 @@ class Gallery:
         self.images = []
 
     def load_file(self, file: str) -> None:
-        """Llegeix un arxiu JSON amb la definició de la galeria (veure _load_file)."""
-
-        self._load_file(file)
-        _trace("Gallery.load_file(" + repr(file) + ") -> " + str(len(self.images)) + " imatges")
-
-    def _load_file(self, file: str) -> None:
         """Llegeix un arxiu JSON amb la definició de la galeria.
         Ha de validar que cada imatge referenciada existeix a la col·lecció.
         Si una imatge no existeix, l'ignora i continua processant.
@@ -105,8 +85,8 @@ class Gallery:
 
         self._clear()
 
-        if not isinstance(file, str) or file == "":
-            print(f"ERROR: No s'ha trobat cap arxiu JSON {file if file else ''}")
+        if file == "":
+            print("ERROR: No s'ha trobat cap arxiu JSON")
             return
 
         path = file if os.path.isabs(file) else os.path.join(cfg.get_root(), file)
@@ -122,23 +102,16 @@ class Gallery:
         except (OSError, ValueError) as e:
             print(f"ERROR: No s'ha pogut llegir l'arxiu JSON {path}: {e}")
             return
-        if not isinstance(data, dict):
-            print(f"ERROR: L'arxiu JSON {path} no té el format d'una galeria")
-            return
 
         self.gallery_name = str(data.get("gallery_name", ""))
         self.description = str(data.get("description", ""))
         self.created_date = str(data.get("created_date", ""))
 
         llista = data.get("images", [])
-        if not isinstance(llista, list):
-            return
 
         prefix = os.path.basename(os.path.normpath(cfg.get_root())) + "/"
 
         for p in llista:
-            if not isinstance(p, str):
-                continue
             rel = p.replace("\\", "/")
             candidats = [rel]
             if rel.startswith(prefix):
@@ -150,7 +123,7 @@ class Gallery:
                     fCano = c
                     break
             if fCano is None:
-                continue    # la imatge no existeix: s'ignora
+                continue
 
             uuid = self.image_id.get_uuid(fCano)
             if uuid is None:
