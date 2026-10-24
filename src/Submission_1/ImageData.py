@@ -107,11 +107,11 @@ class ImageData:
             return None
         return self.data[uuid]['file']
 
-    def _full_path(self, file: str) -> str:
-        path = os.path.join(cfg.get_root(), file)
-        if not os.path.isfile(path) and os.path.isfile(file):
+    def _ruta_completa(self, file: str) -> str:
+        ruta = os.path.join(cfg.get_root(), file)
+        if not os.path.isfile(ruta) and os.path.isfile(file):
             return file
-        return path
+        return ruta
 
     def load_metadata(self, uuid: str) -> None:
         """Llegeix les metadades embegudes en l'arxiu PNG i les emmagatzema.
@@ -120,61 +120,61 @@ class ImageData:
         if uuid not in self.data:
             return
 
-        entry = self.data[uuid]
-        path = self._full_path(entry['file'])
+        entrada = self.data[uuid]
+        ruta = self._ruta_completa(entrada['file'])
 
-        meta = cfg.read_png_metadata(path)
-        if meta is None:
-            entry['metadata'] = {}
-            entry['dimensions'] = (None, None)
+        metadatos = cfg.read_png_metadata(ruta)
+        if metadatos is None:
+            entrada['metadata'] = {}
+            entrada['dimensions'] = (None, None)
         else:
-            entry['metadata'] = meta
+            entrada['metadata'] = metadatos
             try:
-                with Image.open(path) as img:
-                    entry['dimensions'] = (img.width, img.height)
+                with Image.open(ruta) as imagen:
+                    entrada['dimensions'] = (imagen.width, imagen.height)
             except Exception:
-                entry['dimensions'] = (None, None)
-        entry['loaded'] = True
+                entrada['dimensions'] = (None, None)
+        entrada['loaded'] = True
 
-    def _get_field(self, uuid: str, name: str) -> str:
+    def _obtener_campo(self, uuid: str, campo: str) -> str:
         if uuid not in self.data:
             return None
-        value = self.data[uuid]['metadata'].get(name)
-        if value is None or value == "":
+        valor = self.data[uuid]['metadata'].get(campo)
+        if valor is None or valor == "":
             return "None"
-        return str(value)
+        return str(valor)
 
     def get_prompt(self, uuid: str) -> str:
         """Retorna el prompt utilitzat per generar la imatge."""
-        return self._get_field(uuid, 'Prompt')
+        return self._obtener_campo(uuid, 'Prompt')
 
     def get_model(self, uuid: str) -> str:
         """Retorna el model d'IA utilitzat (p.ex. "SD2", "DALL-E", "Midjourney")."""
-        return self._get_field(uuid, 'Model')
+        return self._obtener_campo(uuid, 'Model')
 
     def get_seed(self, uuid: str) -> str:
         """Retorna la llavor aleatòria utilitzada en la generació."""
-        return self._get_field(uuid, 'Seed')
+        return self._obtener_campo(uuid, 'Seed')
 
     def get_cfg_scale(self, uuid: str) -> str:
         """Retorna el CFG Scale (guidance scale) utilitzat."""
-        return self._get_field(uuid, 'CFG_Scale')
+        return self._obtener_campo(uuid, 'CFG_Scale')
 
     def get_steps(self, uuid: str) -> str:
         """Retorna el nombre de passos d'iteració del model."""
-        return self._get_field(uuid, 'Steps')
+        return self._obtener_campo(uuid, 'Steps')
 
     def get_sampler(self, uuid: str) -> str:
         """Retorna l'algorisme de mostreig utilitzat."""
-        return self._get_field(uuid, 'Sampler')
+        return self._obtener_campo(uuid, 'Sampler')
 
     def get_generated(self, uuid: str) -> str:
         """Retorna "true" si la imatge està marcada com a generada."""
-        return self._get_field(uuid, 'Generated')
+        return self._obtener_campo(uuid, 'Generated')
 
     def get_created_date(self, uuid: str) -> str:
         """Retorna la data de creació en format YYYY-MM-DD."""
-        return self._get_field(uuid, 'Created_Date')
+        return self._obtener_campo(uuid, 'Created_Date')
 
     def get_dimensions(self, uuid: str) -> tuple:
         """Retorna una tupla (width, height) amb les dimensions de la imatge."""
