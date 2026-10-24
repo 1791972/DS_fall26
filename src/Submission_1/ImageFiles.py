@@ -35,8 +35,6 @@ import cfg
 
 class ImageFiles:
     def __init__(self):
-        # Dos conjunts (set) de paths: amb sets, "afegits" i "eliminats" són
-        # simples diferències de conjunts.
         self.current_files = set()    # arxius trobats a l'última lectura
         self.previous_files = set()   # arxius trobats a la lectura anterior
 
@@ -54,7 +52,6 @@ class ImageFiles:
             path = cfg.get_root()
         path = str(path)
 
-        # Si el path no existeix tal qual, es prova com a relatiu a ROOT_DIR
         if not os.path.isdir(path):
             alt = os.path.join(cfg.get_root(), path)
             if os.path.isdir(alt):
