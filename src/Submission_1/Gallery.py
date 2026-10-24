@@ -55,6 +55,18 @@ import json
 import cfg
 from ImageID import ImageID
 
+# --- TEMPORAL (diagnòstic): imprimeix les crides que fa el test. Posa DEBUG = False
+# --- (o esborra les línies "_trace") quan ja no calgui.
+DEBUG = True
+_ntrace = 0
+
+
+def _trace(msg):
+    global _ntrace
+    if DEBUG and _ntrace < 1500:
+        _ntrace += 1
+        print("TRACE " + msg)
+
 
 class Gallery:
     def __init__(self, image_id=None, image_viewer=None):
@@ -86,6 +98,7 @@ class Gallery:
         """Llegeix un arxiu JSON amb la definició de la galeria (veure _load_file)."""
 
         self._load_file(file)
+        _trace("Gallery.load_file(" + repr(file) + ") -> " + str(len(self.images)) + " imatges")
 
     def _load_file(self, file: str) -> None:
         """Llegeix un arxiu JSON amb la definició de la galeria.
