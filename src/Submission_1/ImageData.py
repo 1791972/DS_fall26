@@ -62,6 +62,19 @@ Notes:
 import os
 import cfg
 
+# --- TEMPORAL (diagnòstic): imprimeix les crides que fa el test. Posa DEBUG = False
+# --- (o esborra les línies "_trace") quan ja no calgui.
+DEBUG = True
+_ntrace = 0
+
+
+def _trace(msg):
+    global _ntrace
+    if DEBUG and _ntrace < 1500:
+        _ntrace += 1
+        print("TRACE " + msg)
+
+
 
 def _read_dimensions(path):
     """Llegeix (width, height) del chunk IHDR d'un PNG, sense PIL ni cfg:
@@ -83,6 +96,7 @@ class ImageData:
         self.data = {}
 
     def __len__(self):
+        _trace("ImageData.__len__() -> " + str(len(self.data)))
         return len(self.data)
 
     def __str__(self):
@@ -104,9 +118,12 @@ class ImageData:
 
         # Insercions sense sentit o imatge ja existent: s'ignoren
         if not isinstance(uuid, str) or not isinstance(file, str) or file == "":
+            _trace("ImageData.add_image(" + repr(uuid) + ", " + repr(file) + ") -> ignorada (sense sentit)")
             return
         if uuid in self.data:
+            _trace("ImageData.add_image(" + repr(uuid) + ", " + repr(file) + ") -> ignorada (ja existeix)")
             return
+        _trace("ImageData.add_image(" + repr(uuid) + ", " + repr(file) + ") -> afegida")
 
         # Si arriba un path absolut es guarda el relatiu a ROOT_DIR; un relatiu es guarda tal qual
         if os.path.isabs(file):
@@ -116,12 +133,14 @@ class ImageData:
     def remove_image(self, uuid: str) -> None:
         """Elimina la imatge i totes les seves metadades de la col·lecció."""
 
+        _trace("ImageData.remove_image(" + repr(uuid) + ") -> " + ("esborrada" if uuid in self.data else "no existia"))
         self.data.pop(uuid, None)
 
     def get_filename(self, uuid: str) -> str:
         """Retorna el path guardat de l'arxiu de la imatge ("None" si no existeix)."""
 
         if uuid not in self.data:
+            _trace("ImageData.get_filename(" + repr(uuid) + ") -> uuid desconegut")
             return None
         return self.data[uuid]['file']
 
@@ -136,10 +155,12 @@ class ImageData:
         Aquest mètode es pot cridar múltiples vegades (p.ex. si l'arxiu canvia)."""
 
         if uuid not in self.data:
+            _trace("ImageData.load_metadata(" + repr(uuid) + ") -> uuid desconegut")
             return
 
         entry = self.data[uuid]
         path = self._full_path(entry['file'])
+        _trace("ImageData.load_metadata(" + repr(uuid) + ") llegint " + path)
 
         meta = cfg.read_png_metadata(path)      # None si l'arxiu no es pot llegir
         if meta is None:
@@ -153,6 +174,7 @@ class ImageData:
     def _get_field(self, uuid: str, name: str) -> str:
         # Només consulta el que ja s'ha carregat amb load_metadata()
         if uuid not in self.data:
+            _trace("ImageData." + name + "(" + repr(uuid) + ") -> uuid desconegut")
             return None
         value = self.data[uuid]['metadata'].get(name)
         if value is None or value == "":
@@ -195,5 +217,6 @@ class ImageData:
         """Retorna una tupla (width, height) amb les dimensions de la imatge."""
 
         if uuid not in self.data:
+            _trace("ImageData.get_dimensions(" + repr(uuid) + ") -> uuid desconegut")
             return None
         return self.data[uuid]['dimensions']
