@@ -55,8 +55,6 @@ import json
 import cfg
 from ImageID import ImageID
 
-# --- TEMPORAL (diagnòstic): imprimeix les crides que fa el test. Posa DEBUG = False
-# --- (o esborra les línies "_trace") quan ja no calgui.
 DEBUG = True
 _ntrace = 0
 
@@ -75,7 +73,6 @@ class Gallery:
         self.gallery_name = ""
         self.description = ""
         self.created_date = ""
-        # Llista d'UUID. (RecommenderSystem de la Fase 2 espera l'atribut "images")
         self.images = []
 
     @property
@@ -106,7 +103,6 @@ class Gallery:
         Si una imatge no existeix, l'ignora i continua processant.
         Emmagatzema internament els UUID de les imatges vàlides."""
 
-        # Cada load_file() esborra el contingut previ, també si l'arxiu no existeix
         self._clear()
 
         if not isinstance(file, str) or file == "":
@@ -138,8 +134,6 @@ class Gallery:
         if not isinstance(llista, list):
             return
 
-        # Els paths del JSON són relatius a ROOT_DIR, però l'exemple de
-        # l'enunciat els porta amb el prefix "generated_images/": es proven tots dos.
         prefix = os.path.basename(os.path.normpath(cfg.get_root())) + "/"
 
         for p in llista:
@@ -156,7 +150,7 @@ class Gallery:
                     fCano = c
                     break
             if fCano is None:
-                continue                      # la imatge no existeix: s'ignora
+                continue    # la imatge no existeix: s'ignora
 
             uuid = self.image_id.get_uuid(fCano)
             if uuid is None:
